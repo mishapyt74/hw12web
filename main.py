@@ -7,6 +7,7 @@ from typing import Optional
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Session
 
 Base = declarative_base()
 app = FastAPI()
@@ -48,8 +49,13 @@ class User(Base):
 
 
 @app.post("/register/")
-def register():
-    pass
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    hashed_password = get_password_hash(user.password)
+    db_user = User(email=user.email, hashed_password=hashed_password)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return {"message": "User created successfully"}
 
 
 @app.post("/token/")
